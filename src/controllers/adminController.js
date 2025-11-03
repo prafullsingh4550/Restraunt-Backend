@@ -38,7 +38,8 @@ export const loginAdmin = async (req, res) => {
   res
   .cookie("token", token, {
     httpOnly: true,           // prevent JS access
-    secure: process.env.NODE_ENV === "production", // only HTTPS in prod
+    secure: true,
+    // secure: process.env.NODE_ENV === "production", // only HTTPS in prod
     sameSite: "None",       // block CSRF from other sites
     maxAge: 12 * 60 * 60 * 1000 // 12 hours
   })
