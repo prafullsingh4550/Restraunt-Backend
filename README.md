@@ -1,6 +1,4 @@
-Ah, I see — Git is still trying to authenticate as **`prafullasingh1234`**, even after your previous attempts. This is a classic macOS Git + Keychain caching issue. Let’s fix it step by step so your push works.
 
----
 
 ### **Step 1: Completely remove the old credentials**
 
@@ -8,7 +6,7 @@ Ah, I see — Git is still trying to authenticate as **`prafullasingh1234`**, ev
 
 1. Open **Keychain Access** (Finder → Applications → Utilities → Keychain Access).
 2. Search for `github.com`.
-3. Delete **all entries** related to GitHub, especially ones with account `prafullasingh1234`.
+3. Delete **all entries** related to GitHub, especially ones with account `prafullasingh-1234`.
 
 ---
 
@@ -43,7 +41,7 @@ origin  https://github.com/prafullsingh4550/Restraunt-Backend.git (fetch)
 origin  https://github.com/prafullsingh4550/Restraunt-Backend.git (push)
 ```
 
-If it shows a URL with `prafullasingh1234`, fix it:
+If it shows a URL with `prafullasingh-spotline`, fix it:
 
 ```bash
 git remote set-url origin https://github.com/prafullsingh4550/Restraunt-Backend.git
