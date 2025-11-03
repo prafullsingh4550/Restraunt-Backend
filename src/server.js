@@ -61,8 +61,8 @@ const app = express();
 
 // ✅ 1. Define allowed frontend origins
 const allowedOrigins = [
-  "http://localhost:8080", // your Vite frontend
-  "http://127.0.0.1:8080"
+  "https://restaurant-crm-frontend.vercel.app", // your Vite frontend
+  "https://restaurant-crm-frontend.vercel.app"
 ];
 
 // ✅ 2. Express CORS setup (for REST API)
