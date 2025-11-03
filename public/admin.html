@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Order Dashboard</title>
+  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    #loginForm, #dashboard {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    }
+    input {
+      display: block;
+      width: 95%;
+      margin: 10px 0;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover { background: #0056b3; }
+    .order {
+      background: #fafafa;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      margin-top: 10px;
+    }
+    .order button {
+      margin: 5px;
+      padding: 6px 10px;
+      border-radius: 5px;
+    }
+    .update { background: #28a745; color: #fff; }
+    .delete { background: #dc3545; color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>Admin Orders Dashboard</h1>
+
+  <!-- Login Section -->
+  <div id="loginForm">
+    <h3>Admin Login</h3>
+    <input type="text" id="email" placeholder="Enter admin email" />
+    <input type="password" id="password" placeholder="Enter password" />
+    <button id="loginBtn">Login</button>
+    <p id="loginMsg" style="color:red;"></p>
+  </div>
+
+  <!-- Dashboard Section -->
+  <div id="dashboard" style="display:none;">
+    <button id="logoutBtn" style="float:right;background:#6c757d;">Logout</button>
+    <h3>Orders List</h3>
+    <button id="refresh">🔄 Refresh Orders</button>
+    <div id="orders"></div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:3000/api";
+    const socket = io("http://localhost:3000", { withCredentials: true });
+    const loginForm = document.getElementById("loginForm");
+    const dashboard = document.getElementById("dashboard");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const ordersDiv = document.getElementById("orders");
+    const refreshBtn = document.getElementById("refresh");
+
+    // Handle Login
+    loginBtn.addEventListener("click", async () => {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      const res = await fetch(`${API_BASE}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "include" // ✅ automatically stores cookie
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        document.getElementById("loginMsg").textContent = "";
+        loginForm.style.display = "none";
+        dashboard.style.display = "block";
+        fetchOrders();
+      } else {
+        document.getElementById("loginMsg").textContent = data.error || "Login failed";
+      }
+    });
+
+    logoutBtn.addEventListener("click", async () => {
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        credentials: "include"
+      });
+      dashboard.style.display = "none";
+      loginForm.style.display = "block";
+    });
+
+    // Fetch Orders (auto-sends cookie)
+    async function fetchOrders() {
+      ordersDiv.innerHTML = "<p>Loading orders...</p>";
+      const res = await fetch(`${API_BASE}/orders`, { credentials: "include" });
+      const orders = await res.json();
+
+      if (!orders.length) {
+        ordersDiv.innerHTML = "<p>No orders found.</p>";
+        return;
+      }
+
+      ordersDiv.innerHTML = "";
+      orders.forEach(order => {
+        const div = document.createElement("div");
+        div.className = "order";
+        div.innerHTML = `
+          <h4>🧾 ${order.orderId}</h4>
+          <p><b>Table:</b> ${order.tableNumber}</p>
+          <p><b>Status:</b> ${order.orderStatus || "received"}</p>
+          <p><b>Total:</b> ₹${order.total}</p>
+          <button class="update" onclick="updateStatus('${order.orderId}', 'completed')">✅ Mark Completed</button>
+          <button class="delete" onclick="deleteOrder('${order._id}')">🗑 Delete</button>
+        `;
+        ordersDiv.appendChild(div);
+      });
+    }
+
+    // Update Status
+    async function updateStatus(orderId, newStatus) {
+      const res = await fetch(`${API_BASE}/orders/${orderId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      alert(`Order ${orderId} updated to ${data.orderStatus}`);
+      fetchOrders();
+    }
+
+    // Delete Order
+    async function deleteOrder(orderId) {
+      const res = await fetch(`${API_BASE}/orders/${orderId}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      const data = await res.json();
+      alert(data.message);
+      fetchOrders();
+    }
+
+    // Listen to socket updates
+    socket.on("admin_order_updated", payload => {
+      console.log("🔔 Order Updated:", payload);
+      fetchOrders();
+    });
+
+    refreshBtn.addEventListener("click", fetchOrders);
+  </script>
+</body>
+</html>
