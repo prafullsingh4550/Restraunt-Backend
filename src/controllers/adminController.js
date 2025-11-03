@@ -39,7 +39,7 @@ export const loginAdmin = async (req, res) => {
   .cookie("token", token, {
     httpOnly: true,           // prevent JS access
     secure: process.env.NODE_ENV === "production", // only HTTPS in prod
-    sameSite: "strict",       // block CSRF from other sites
+    sameSite: "None",       // block CSRF from other sites
     maxAge: 12 * 60 * 60 * 1000 // 12 hours
   })
   .json({ message: "Login successful" });
