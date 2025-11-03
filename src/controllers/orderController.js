@@ -106,33 +106,45 @@ export const getAllOrders = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { status, estimatedReadyAt } = req.body;
+    const { status, estimatedReadyAt, paymentStatus } = req.body;
+
+    // Build update object dynamically to only update provided fields
+    const updateFields = {};
+    if (status) updateFields.orderStatus = status;
+    if (estimatedReadyAt) updateFields.estimatedReadyAt = estimatedReadyAt;
+    if (paymentStatus) updateFields.paymentStatus = paymentStatus;
 
     const order = await Order.findOneAndUpdate(
       { orderId },
-      { orderStatus: status, estimatedReadyAt },
+      updateFields,
       { new: true }
     );
 
     if (!order) return res.status(404).json({ error: "Order not found" });
 
+    // Emit socket updates
     const io = req.app.get("io");
     if (io) {
       const payload = {
         orderId: order.orderId,
         orderStatus: order.orderStatus,
+        paymentStatus: order.paymentStatus,
         estimatedReadyAt: order.estimatedReadyAt,
         updatedAt: order.updatedAt,
       };
+
+      // Notify table and admin interfaces
       io.to(`table-${order.tableNumber}`).emit("order_updated", payload);
       io.emit("admin_order_updated", payload);
     }
 
     res.json(order);
   } catch (err) {
+    console.error("Error updating order status:", err);
     res.status(500).json({ error: err.message });
   }
 };
+
 
 /**
  * Delete order (admin)
